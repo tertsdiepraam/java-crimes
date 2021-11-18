@@ -2,7 +2,7 @@ package first;
 
 import java.io.Serializable;
 
-class VectorClock implements Serializable {
+class VectorClock implements Serializable, Cloneable {
     final private int[] values;
 
     protected VectorClock(int num_processes) {
@@ -36,5 +36,15 @@ class VectorClock implements Serializable {
 
     public void tick(int process_id) {
         this.values[process_id]++;
+    }
+
+    public VectorClock ticked(int process_id) {
+        VectorClock ticked = null;
+        try {
+            ticked = (VectorClock) this.clone();
+        } catch (Exception e) {
+        }
+        ticked.tick(process_id);
+        return ticked;
     }
 }
