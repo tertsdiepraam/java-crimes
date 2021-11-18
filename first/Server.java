@@ -1,8 +1,7 @@
-package first.server;
+package first;
+
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-
-import first.client.Client;
 
 public class Server {
     static int NUM_PROCESSES = 5;
@@ -20,10 +19,8 @@ public class Server {
         for (int i=0; i<NUM_PROCESSES; i++) {
             Client c;
             try {
-                c = new Client(i);
-                System.out.println("erg;xjkt");
+                c = new Client(i, NUM_PROCESSES);
             } catch (Exception e) {
-                System.err.println("AAAHAAHAHAHAH");
                 continue;
             }
             new Thread(c).start();
