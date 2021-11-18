@@ -3,7 +3,7 @@ package first;
 import java.io.Serializable;
 
 class VectorClock implements Serializable {
-    int[] values;
+    final private int[] values;
 
     protected VectorClock(int num_processes) {
         this.values = new int[num_processes];
@@ -14,7 +14,7 @@ class VectorClock implements Serializable {
     }
 
     public boolean lessThanEq(VectorClock other) {
-        for (int i=0; i<this.values.length; i++) {
+        for (int i = 0; i < this.values.length; i++) {
             if (this.values[i] > other.values[i]) {
                 return false;
             }
@@ -27,13 +27,13 @@ class VectorClock implements Serializable {
     }
 
     public void update(VectorClock other) {
-        for (int i=0; i<this.values.length; i++) {
+        for (int i = 0; i < this.values.length; i++) {
             if (other.values[i] > this.values[i]) {
                 this.values[i] = other.values[i];
             }
         }
     }
-    
+
     public void tick(int process_id) {
         this.values[process_id]++;
     }
