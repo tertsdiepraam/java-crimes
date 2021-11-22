@@ -84,7 +84,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     public void run() {
         try {
             String msg = this.id + " -> " + ((this.id + 1) % this.num_processes);
-            send((this.id + 1) % this.num_processes, msg + " (1)");
+            send((this.id + 1) % this.num_processes, msg + " (1)" + " " + this.clock.printValues());
             Thread.sleep(500);
             send((this.id + 1) % this.num_processes, msg + " (2)");
         } catch (Exception e) {
