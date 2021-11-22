@@ -60,23 +60,28 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 this.buffer.put(k, v);
             }
         }
+        this.clock.tick(this.id);
     }
 
     private void send(int dest, String msg) throws RemoteException, InterruptedException {
-        find_client(dest).receive(new Message(msg, this.buffer, this.clock));
-        // TODO: check clock
+        find_client(dest).receive(new Message(msg, this.buffer, this.clock, this.id));
         this.buffer.put(dest, this.clock);
+        this.clock.tick(this.id);
     }
 
     private boolean expected(Message msg){
-        // TODO: check this
-        return msg.clock().lessThanEq(this.clock.ticked(this.id));
+        if (msg.buffer().containsKey(msg.sender())) {
+            return msg.buffer().get(msg.sender()).lessThanEq(this.clock);
+        } else {
+            return true;
+        }
     }
 
 
     public void run() {
         try {
-            send((this.id + 1) % this.num_processes, "Hello!");
+            String msg = this.id + " -> " + ((this.id + 1) % this.num_processes);
+            send((this.id + 1) % this.num_processes, msg);
         } catch (Exception e) {
             System.err.println("Failed to send message from " + id);
         }
