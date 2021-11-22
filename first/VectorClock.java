@@ -5,7 +5,7 @@ import java.io.Serializable;
 class VectorClock implements Serializable, Cloneable {
     private int[] values;
 
-    protected VectorClock(int num_processes) {
+    public VectorClock(int num_processes) {
         this.values = new int[num_processes];
     }
 
@@ -53,5 +53,13 @@ class VectorClock implements Serializable, Cloneable {
         }
         ticked.tick(process_id);
         return ticked;
+    }
+
+    public String printValues() {
+        String res = "";
+        for(int i : values) {
+            res += i;
+        }
+        return res;
     }
 }
