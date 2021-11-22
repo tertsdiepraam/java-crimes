@@ -3,10 +3,17 @@ package first;
 import java.io.Serializable;
 
 class VectorClock implements Serializable, Cloneable {
-    final private int[] values;
+    private int[] values;
 
     protected VectorClock(int num_processes) {
         this.values = new int[num_processes];
+    }
+
+    @Override
+    public VectorClock clone() {
+        VectorClock clone = new VectorClock(this.values.length);
+        clone.values = this.values.clone();
+        return clone;
     }
 
     public boolean equals(VectorClock other) {
