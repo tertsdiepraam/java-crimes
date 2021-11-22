@@ -26,6 +26,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         this.clock = new VectorClock(num_processes);
         this.reg = LocateRegistry.getRegistry(1888);
         this.reg.bind(this.id + "", this);
+        this.msg_buffer = new ArrayList<>();
     }
 
     @Override
