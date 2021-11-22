@@ -17,8 +17,9 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     final ArrayList<Message> msg_buffer;
     final VectorClock clock;
     final Registry reg;
+    final Draft[] drafts;
 
-    public Client(int id, int num_processes) throws RemoteException, AlreadyBoundException, AccessException {
+    public Client(int id, int num_processes, Draft[] drafts) throws RemoteException, AlreadyBoundException, AccessException {
         super();
         this.id = id;
         this.num_processes = num_processes;
@@ -27,6 +28,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         this.reg = LocateRegistry.getRegistry(1888);
         this.reg.bind(this.id + "", this);
         this.msg_buffer = new ArrayList<>();
+        this.drafts = drafts;
     }
 
     @Override
@@ -62,13 +64,18 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             }
             this.clock.update(v);
         }
+        this.clock.update(m.clock());
         this.clock.tick(this.id);
     }
 
     private void send(int dest, String msg) throws RemoteException, InterruptedException {
+        send(dest, msg, 0);
+    }
+
+    private void send(int dest, String msg, int delay) throws RemoteException, InterruptedException {
         this.clock.tick(this.id);
         new Thread(
-            new Connection(find_client(dest), new Message(msg, (HashMap<Integer,VectorClock>) this.buffer.clone(), this.clock.clone(), this.id, dest))
+            new Connection(find_client(dest), new Message(msg, (HashMap<Integer,VectorClock>) this.buffer.clone(), this.clock.clone(), this.id, dest), delay)
         ).start();
         this.buffer.put(dest, this.clock.clone());
     }
@@ -82,14 +89,28 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void run() {
-        try {
-            String msg = this.id + " -> " + ((this.id + 1) % this.num_processes);
-            send((this.id + 1) % this.num_processes, msg + " (1)" + " " + this.clock.printValues());
-            Thread.sleep(500);
-            send((this.id + 1) % this.num_processes, msg + " (2)");
-        } catch (Exception e) {
-            System.err.println("Failed to send message from " + id);
+        Client self = this;
+        for (Draft draft : this.drafts) {
+            if (draft.from() != this.id)
+                continue;
+            
+            new java.util.Timer().schedule( 
+                new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            self.send_draft(draft);
+                        } catch (Exception e) {
+                        }
+                    }
+                },
+                draft.time()
+            );
         }
+    }
+
+    public void send_draft(Draft draft) throws RemoteException, InterruptedException {
+        send(draft.to(), draft.text(), draft.delay());
     }
 
     private RemoteClient find_client(int id) throws InterruptedException {

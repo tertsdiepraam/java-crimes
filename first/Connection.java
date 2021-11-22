@@ -1,8 +1,7 @@
 package first;
 
-record Connection (RemoteClient c, Message m) implements Runnable {
+record Connection (RemoteClient c, Message m, int delay) implements Runnable {
     public void run() {
-        int delay = (int) (Math.random() * 2000);
         try {
             Thread.sleep(delay);
             c.receive(m);
