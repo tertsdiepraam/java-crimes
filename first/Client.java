@@ -58,21 +58,24 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             if (this.buffer.containsKey(k)) {
                 this.buffer.get(k).update(v);
             } else {
-                this.buffer.put(k, v);
+                this.buffer.put(k, v.clone());
             }
+            this.clock.update(v);
         }
         this.clock.tick(this.id);
     }
 
     private void send(int dest, String msg) throws RemoteException, InterruptedException {
-        new Thread(new Connection(find_client(dest), new Message(msg, (HashMap) this.buffer.clone(), this.clock.clone(), this.id, dest))).start();
-        this.buffer.put(dest, this.clock);
         this.clock.tick(this.id);
+        new Thread(
+            new Connection(find_client(dest), new Message(msg, (HashMap) this.buffer.clone(), this.clock.clone(), this.id, dest))
+        ).start();
+        this.buffer.put(dest, this.clock);
     }
 
     private boolean expected(Message msg) {
-        if (msg.buffer().containsKey(msg.sender())) {
-            return msg.buffer().get(msg.sender()).lessThanEq(this.clock);
+        if (msg.buffer().containsKey(this.id)) {
+            return msg.buffer().get(this.id).lessThanEq(this.clock);
         } else {
             return true;
         }
