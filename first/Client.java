@@ -42,7 +42,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         delivered = true;
                     }
                 }
-            };
+            }
+            ;
         } else {
             this.msg_buffer.add(m);
         }
@@ -64,12 +65,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     private void send(int dest, String msg) throws RemoteException, InterruptedException {
-        find_client(dest).receive(new Message(msg, this.buffer, this.clock, this.id));
+        new Thread(new Connection(find_client(dest), new Message(msg, this.buffer, this.clock, this.id, dest))).start();
         this.buffer.put(dest, this.clock);
         this.clock.tick(this.id);
     }
 
-    private boolean expected(Message msg){
+    private boolean expected(Message msg) {
         if (msg.buffer().containsKey(msg.sender())) {
             return msg.buffer().get(msg.sender()).lessThanEq(this.clock);
         } else {
@@ -77,16 +78,17 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         }
     }
 
-
     public void run() {
         try {
             String msg = this.id + " -> " + ((this.id + 1) % this.num_processes);
-            send((this.id + 1) % this.num_processes, msg);
+            send((this.id + 1) % this.num_processes, msg + " (1)");
+            Thread.sleep(500);
+            send((this.id + 1) % this.num_processes, msg + " (2)");
         } catch (Exception e) {
             System.err.println("Failed to send message from " + id);
         }
     }
-   
+
     private RemoteClient find_client(int id) throws InterruptedException {
         final String other_id = id + "";
         RemoteClient other = null;
