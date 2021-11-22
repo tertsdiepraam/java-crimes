@@ -43,6 +43,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     }
                 }
             };
+        } else {
+            this.msg_buffer.add(m);
         }
     }
 
@@ -62,10 +64,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
     private void send(int dest, String msg) throws RemoteException, InterruptedException {
         find_client(dest).receive(new Message(msg, this.buffer, this.clock));
+        // TODO: check clock
         this.buffer.put(dest, this.clock);
     }
 
     private boolean expected(Message msg){
+        // TODO: check this
         return msg.clock().lessThanEq(this.clock.ticked(this.id));
     }
 
