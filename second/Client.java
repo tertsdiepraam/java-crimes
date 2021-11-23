@@ -4,9 +4,10 @@ import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 
-public class Client implements RemoteClient, Runnable {
+public class Client extends UnicastRemoteObject implements RemoteClient, Runnable {
     int id;
     int num_processes;
     Crime[] crimes;
@@ -17,6 +18,7 @@ public class Client implements RemoteClient, Runnable {
     final Registry reg;
 
     public Client(int id, int num_processes, Crime[] crimes) throws RemoteException, AlreadyBoundException {
+        super();
         this.id = id;
         this.num_processes = num_processes;
         this.crimes = crimes;

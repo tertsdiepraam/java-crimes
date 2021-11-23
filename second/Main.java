@@ -20,6 +20,8 @@ public class Main {
             try {
                 new Thread(new Client(i, NUM_PROCESSES, crimes)).start();
             } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("FAILURE");
             }
         }
     }
