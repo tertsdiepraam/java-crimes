@@ -71,7 +71,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     private void send(int dest, String msg, int delay) throws RemoteException, InterruptedException {
         clock.tick(id);
         new Thread(
-            new Connection(find_client(dest), new Message(msg, (HashMap<Integer,VectorClock>) buffer.clone(), clock.clone(), id, dest), delay)
+            new Connection(find_client(dest), new Message(msg, new HashMap<>(buffer), clock.clone(), id, dest), delay)
         ).start();
         buffer.put(dest, clock.clone());
     }
