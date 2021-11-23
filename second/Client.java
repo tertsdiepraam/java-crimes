@@ -46,7 +46,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             receive_token(id, token);
             return;
         }
-        
+
         S[id] = State.Requesting;
         N[id]++;
         for (int j = 0; j < num_processes; j++) {
@@ -64,7 +64,6 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void send_request(int to, int n, int delay) throws InterruptedException {
-        System.out.println("Sending request!");
         int from = this.id;
         RemoteClient other = find_client(to);
         new java.util.Timer().schedule(new java.util.TimerTask() {
@@ -79,9 +78,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void receive_request(int from, int n) {
-        System.out.println("Received request!");
         N[from] = n;
-        System.out.println(S[id] + "");
         switch (S[id]) {
         case Executing:
         case Other:
@@ -97,7 +94,6 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             }
             break;
         case Holding:
-            System.out.println("Holding!");
             S[from] = State.Requesting;
             S[id] = State.Other;
             token.S()[from] = State.Requesting;
@@ -152,7 +148,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         if (all_other) {
             S[id] = State.Holding;
         } else {
-            for (int j = 0; j < num_processes; j++) {
+            for (int j = id + 1; j != id; j = (j + 1) % num_processes) {
                 if (S[j] == State.Requesting) {
                     try {
                         send_token(j);
