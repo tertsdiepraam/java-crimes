@@ -1,4 +1,4 @@
-package second;
+package SchiperEggliSandoz;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -11,19 +11,17 @@ public class Main {
 
         System.err.println("Server ready");
 
-        Crime[] crimes = new Crime[] {
-            new Crime(0, 0),
-            new Crime(1, 100),
+        Draft[] drafts = new Draft[]{
+            new Draft(0, 1, "A", 0, 900),
+            new Draft(0, 2, "B", 300, 0),
+            new Draft(2, 1, "C", 600, 0),
         };
 
         for (int i = 0; i < NUM_PROCESSES; i++) {
             try {
-                new Thread(new Client(i, NUM_PROCESSES, crimes)).start();
+                new Thread(new Client(i, NUM_PROCESSES, drafts)).start();
             } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println("FAILURE");
             }
         }
     }
 }
-

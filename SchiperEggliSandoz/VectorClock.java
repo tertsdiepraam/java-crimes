@@ -1,4 +1,4 @@
-package first;
+package SchiperEggliSandoz;
 
 import java.io.Serializable;
 
@@ -6,23 +6,25 @@ class VectorClock implements Serializable, Cloneable {
     private int[] values;
 
     public VectorClock(int num_processes) {
-        this.values = new int[num_processes];
+        values = new int[num_processes];
+    }
+
+    VectorClock(int[] values) {
+        this.values = values;
     }
 
     @Override
     public VectorClock clone() {
-        VectorClock clone = new VectorClock(this.values.length);
-        clone.values = this.values.clone();
-        return clone;
+        return new VectorClock(this.values.clone());
     }
 
     public boolean equals(VectorClock other) {
-        return this.values.equals(other.values);
+        return values.equals(other.values);
     }
 
     public boolean lessThanEq(VectorClock other) {
-        for (int i = 0; i < this.values.length; i++) {
-            if (this.values[i] > other.values[i]) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] > other.values[i]) {
                 return false;
             }
         }
@@ -34,15 +36,15 @@ class VectorClock implements Serializable, Cloneable {
     }
 
     public void update(VectorClock other) {
-        for (int i = 0; i < this.values.length; i++) {
-            if (other.values[i] > this.values[i]) {
-                this.values[i] = other.values[i];
+        for (int i = 0; i < values.length; i++) {
+            if (other.values[i] > values[i]) {
+                values[i] = other.values[i];
             }
         }
     }
 
     public void tick(int process_id) {
-        this.values[process_id]++;
+        values[process_id]++;
     }
 
     public VectorClock ticked(int process_id) {

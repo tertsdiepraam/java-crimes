@@ -1,4 +1,4 @@
-package first;
+package SchiperEggliSandoz;
 
 record Connection (RemoteClient c, Message m, int delay) implements Runnable {
     public void run() {

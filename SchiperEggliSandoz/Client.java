@@ -1,4 +1,4 @@
-package first;
+package SchiperEggliSandoz;
 
 import java.rmi.AlreadyBoundException;
 import java.rmi.AccessException;
@@ -23,12 +23,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         super();
         this.id = id;
         this.num_processes = num_processes;
-        this.buffer = new HashMap<>();
-        this.clock = new VectorClock(num_processes);
-        this.reg = LocateRegistry.getRegistry(1888);
-        this.reg.bind(this.id + "", this);
-        this.msg_buffer = new ArrayList<>();
         this.drafts = drafts;
+        buffer = new HashMap<>();
+        clock = new VectorClock(num_processes);
+        reg = LocateRegistry.getRegistry(1888);
+        reg.bind(id + "", this);
+        msg_buffer = new ArrayList<>();
     }
 
     @Override
@@ -47,42 +47,38 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             }
             ;
         } else {
-            this.msg_buffer.add(m);
+            msg_buffer.add(m);
         }
     }
 
     private void deliver(Message m) {
         System.out.println("Got message: \"" + m.message() + "\"");
-        this.msg_buffer.remove(m);
+        msg_buffer.remove(m);
         for (Map.Entry<Integer, VectorClock> e : m.buffer().entrySet()) {
             int k = e.getKey();
             VectorClock v = e.getValue();
-            if (this.buffer.containsKey(k)) {
-                this.buffer.get(k).update(v);
+            if (buffer.containsKey(k)) {
+                buffer.get(k).update(v);
             } else {
-                this.buffer.put(k, v.clone());
+                buffer.put(k, v.clone());
             }
-            this.clock.update(v);
+            clock.update(v);
         }
-        this.clock.update(m.clock());
-        this.clock.tick(this.id);
-    }
-
-    private void send(int dest, String msg) throws RemoteException, InterruptedException {
-        send(dest, msg, 0);
+        clock.update(m.clock());
+        clock.tick(id);
     }
 
     private void send(int dest, String msg, int delay) throws RemoteException, InterruptedException {
-        this.clock.tick(this.id);
+        clock.tick(id);
         new Thread(
-            new Connection(find_client(dest), new Message(msg, (HashMap<Integer,VectorClock>) this.buffer.clone(), this.clock.clone(), this.id, dest), delay)
+            new Connection(find_client(dest), new Message(msg, (HashMap<Integer,VectorClock>) buffer.clone(), clock.clone(), id, dest), delay)
         ).start();
-        this.buffer.put(dest, this.clock.clone());
+        buffer.put(dest, clock.clone());
     }
 
     private boolean expected(Message msg) {
-        if (msg.buffer().containsKey(this.id)) {
-            return msg.buffer().get(this.id).lessThanEq(this.clock);
+        if (msg.buffer().containsKey(id)) {
+            return msg.buffer().get(id).lessThanEq(clock);
         } else {
             return true;
         }
@@ -90,8 +86,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
     public void run() {
         Client self = this;
-        for (Draft draft : this.drafts) {
-            if (draft.from() != this.id)
+        for (Draft draft : drafts) {
+            if (draft.from() != id)
                 continue;
             
             new java.util.Timer().schedule( 

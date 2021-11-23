@@ -1,4 +1,4 @@
-package first;
+package SchiperEggliSandoz;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

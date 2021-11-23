@@ -1,4 +1,4 @@
-package second;
+package Singhal;
 
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
