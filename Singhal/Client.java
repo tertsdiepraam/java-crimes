@@ -117,17 +117,18 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             @Override
             public void run() {
                 try {
-                    other.receive_token(from, token);
+                    other.receive_token(from, Token.clone(token));
                 } catch (Exception e) {
                 }
             }
         }, delay);
     }
 
-    public void receive_token(int from, Token token) {
+    public void receive_token(int from, Token tok) {
         S[id] = State.Executing;
         crimes();
         S[id] = State.Other;
+        token = tok;
         token.S()[id] = State.Other;
         for (int j = 0; j < num_processes; j++) {
             if (N[j] > token.N()[j]) {
@@ -138,7 +139,6 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 S[j] = token.S()[j];
             }
         }
-        token.print();
         boolean all_other = true;
         for (State s : S) {
             if (s != State.Other) {
