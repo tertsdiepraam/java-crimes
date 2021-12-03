@@ -19,7 +19,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     final Registry reg;
     final Draft[] drafts;
 
-    public Client(int id, int num_processes, Draft[] drafts) throws RemoteException, AlreadyBoundException, AccessException {
+    public Client(int id, int num_processes, Draft[] drafts)
+            throws RemoteException, AlreadyBoundException, AccessException {
         super();
         this.id = id;
         this.num_processes = num_processes;
@@ -71,8 +72,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     private void send(int dest, String msg, int delay) throws RemoteException, InterruptedException {
         clock.tick(id);
         new Thread(
-            new Connection(find_client(dest), new Message(msg, new HashMap<>(buffer), clock.clone(), id, dest), delay)
-        ).start();
+                new Connection(find_client(dest), new Message(msg, new HashMap<>(buffer), clock.clone(), id, dest),
+                        delay)).start();
         buffer.put(dest, clock.clone());
     }
 
@@ -89,19 +90,18 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         for (Draft draft : drafts) {
             if (draft.from() != id)
                 continue;
-            
-            new java.util.Timer().schedule( 
-                new java.util.TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            self.send_draft(draft);
-                        } catch (Exception e) {
+
+            new java.util.Timer().schedule(
+                    new java.util.TimerTask() {
+                        @Override
+                        public void run() {
+                            try {
+                                self.send_draft(draft);
+                            } catch (Exception e) {
+                            }
                         }
-                    }
-                },
-                draft.time()
-            );
+                    },
+                    draft.time());
         }
     }
 

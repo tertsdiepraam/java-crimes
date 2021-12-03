@@ -154,6 +154,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         send_token(j);
                     } catch (Exception e) {
                     }
+                    break;
                 }
             }
         }
