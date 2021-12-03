@@ -42,13 +42,13 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void request() throws InterruptedException {
+        N[id]++;
         if (S[id] == State.Holding) {
             receive_token(id, token);
             return;
         }
 
         S[id] = State.Requesting;
-        N[id]++;
         for (int j = 0; j < num_processes; j++) {
             if (id == j)
                 continue;
@@ -138,6 +138,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 S[j] = token.S()[j];
             }
         }
+        token.print();
         boolean all_other = true;
         for (State s : S) {
             if (s != State.Other) {
