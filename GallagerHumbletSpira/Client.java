@@ -52,10 +52,14 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         public boolean includes(int id) {
             return this.from == id || this.to == id;
         }
+    }
+
+    record Fragment(Edge edge, int from, int to, int level) {
     };
 
-    record Fragment(int from, int to, int level) {
-    };
+    public Fragment incrementFragment(Fragment old, Edge cur) {
+        return new Fragment(cur, old.from, old.to, old.level + 1);
+    }
 
     final int id;
     Registry reg;
@@ -64,9 +68,9 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     Fragment fragment;
     State state = State.Sleeping;
     int findCount = 0;
-    Integer bestEdge = null;
-    Integer testEdge = null;
-    Integer inBranch = null;
+    Edge bestEdge = null;
+    Edge testEdge = null;
+    Edge inBranch = null;
     int bestWt = Integer.MAX_VALUE;
     final ArrayList<Edge> edges = new ArrayList<Edge>();
     final ArrayDeque<Message> messageQueue = new ArrayDeque<Message>();
@@ -107,11 +111,47 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         }
     }
 
-    public void receive(Message m) {
+    public void receive(Message m) throws Exception {
         switch (m.type) {
-            case Initiate:
-                break;
             case Connect:
+                if (state == State.Sleeping)
+                    wakeup();
+                if (m.fragment.level < fragment.level) {
+                    int cur = -1;
+                    for (int i = 0; i < edges.size(); i++) {
+                        if (edges.get(i).equals(m.j)) {
+                            cur = i;
+                        }
+                    }
+                    m.j.state = EdgeState.Included;
+                    edges.set(cur, m.j);
+                    send(new Message(Type.Initiate, fragment, state, m.j));
+                    if (state == State.Find)
+                        findCount++;
+                }
+                else {
+                    if (m.j.state == EdgeState.Unknown)
+                        messageQueue.add(m);
+                    else send(new Message(Type.Initiate, incrementFragment(fragment, m.j), State.Find, m.j));
+                }
+                break;
+            case Initiate:
+                fragment = m.fragment;
+                state = m.S;
+                inBranch = m.j;
+                bestEdge = null;
+                bestWt = Integer.MAX_VALUE;
+                for(Edge edge : edges) {
+                    if (!edge.equals(m.j) && edge.state == EdgeState.Included) {
+                        send(new Message(Type.Initiate, m.fragment, m.S, edge));
+                        if (m.S == State.Find) {
+                            findCount++;
+                        }
+                    }
+                }
+                if (m.S == State.Find) test();
+                break;
+            case Test:
                 break;
             case Accept:
                 break;
@@ -119,14 +159,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 break;
             case Report:
                 break;
-            case Test:
-                break;
             case ChangeRoot:
                 break;
         }
     }
 
-    void wakeup() throws InterruptedException, RemoteException {
+    void wakeup() throws Exception {
         System.out.println("Client " + id + " woke up!");
 
         int j = 0;
@@ -140,15 +178,34 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
         Edge e = edges.get(j);
         e.state = EdgeState.Included;
-        fragment = new Fragment(id, e.to, 0);
+        fragment = new Fragment(e, id, e.to, 0);
         state = State.Found;
         findCount = 0;
         send(new Message(Type.Connect, fragment, state, e));
     }
 
-    void send(Message m) throws InterruptedException, RemoteException {
+    void send(Message m) throws Exception {
         RemoteClient c = findClient(m.j.to);
         c.receive(m);
+    }
+
+    void test() throws Exception {
+        boolean found = false;
+        int weight = Integer.MAX_VALUE;
+        for (int i = 0; i < edges.size(); i++) {
+            Edge cur = edges.get(i);
+            if (cur.state == EdgeState.Unknown && cur.weight < weight) {
+                testEdge = cur;
+                weight = cur.weight;
+                found = true;
+            }
+        }
+        if (found) send(new Message(Type.Test, fragment, state, testEdge));
+        else report();
+    }
+
+    void report() {
+        // do some magic
     }
 
     private RemoteClient findClient(int id) throws InterruptedException {
