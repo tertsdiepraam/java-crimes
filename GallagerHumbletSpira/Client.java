@@ -194,6 +194,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
                 break;
             case ChangeRoot:
+                changeRoot();
                 break;
         }
     }
@@ -263,7 +264,10 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
     }
 
-    void halt() {}
+    void halt() throws RemoteException {
+        log("HALT");
+        printTree();
+    }
 
     private RemoteClient findClient(int id) {
         final String otherId = id + "";
