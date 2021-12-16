@@ -24,11 +24,12 @@ public class Main {
         System.out.println("Making processes " + start + " to " + end);
 
         Edge[] edges = new Edge[] {
-            
+            new Edge(0, 1, 0),
+            //new Edge(1, 2, 1),
         };
 
         for (int i = start; i < end; i++) {
-            new Thread(new Client(i, edges, 0)).start();
+            new Thread(new Client(i, edges, i == 0 ? 0 : null)).start();
         }
     }
 }

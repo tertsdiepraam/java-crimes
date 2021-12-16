@@ -1,7 +1,7 @@
 package GallagerHumbletSpira;
 
+import java.io.Serializable;
 import java.rmi.AlreadyBoundException;
-import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -20,7 +20,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         Unknown, Included, Excluded
     }
 
-    public class Edge {
+    public static class Edge implements Serializable {
         private int from;
         private int to;
         int weight;
@@ -40,13 +40,13 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             return (this.from == other.from && this.to == other.to) || (this.from == other.to && this.to == other.from);
         }
 
-        public int other(int self) throws Exception {
+        public Integer other(int self) {
             if (this.from == self) {
                 return this.to;
             } else if (this.to == self) {
                 return this.from;
             }
-            throw new Exception("YOU IDIOT");
+            return null;
         }
 
         public boolean includes(int id) {
@@ -54,7 +54,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         }
     }
 
-    record Fragment(Edge edge, int from, int to, int level) {
+    record Fragment(Edge edge, int from, int to, int level) implements Serializable {
     };
 
     public Fragment incrementFragment(Fragment old, Edge cur) {
@@ -108,12 +108,15 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         }
                     },
                     wakeupTime);
-        }
+        } else
+            log("sleepy");
     }
 
-    public void receive(Message m) throws Exception {
+    public void receive(Message m) throws RemoteException {
+        log("Got a message");
         switch (m.type) {
             case Connect:
+                log("Got a connect message");
                 if (state == State.Sleeping)
                     wakeup();
                 if (m.fragment.level < fragment.level) {
@@ -128,11 +131,11 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     send(new Message(Type.Initiate, fragment, state, m.j));
                     if (state == State.Find)
                         findCount++;
-                }
-                else {
+                } else {
                     if (m.j.state == EdgeState.Unknown)
                         messageQueue.add(m);
-                    else send(new Message(Type.Initiate, incrementFragment(fragment, m.j), State.Find, m.j));
+                    else
+                        send(new Message(Type.Initiate, incrementFragment(fragment, m.j), State.Find, m.j));
                 }
                 break;
             case Initiate:
@@ -141,7 +144,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 inBranch = m.j;
                 bestEdge = null;
                 bestWt = Integer.MAX_VALUE;
-                for(Edge edge : edges) {
+                for (Edge edge : edges) {
                     if (!edge.equals(m.j) && edge.state == EdgeState.Included) {
                         send(new Message(Type.Initiate, m.fragment, m.S, edge));
                         if (m.S == State.Find) {
@@ -149,7 +152,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         }
                     }
                 }
-                if (m.S == State.Find) test();
+                if (m.S == State.Find)
+                    test();
                 break;
             case Test:
                 break;
@@ -164,8 +168,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         }
     }
 
-    void wakeup() throws Exception {
-        System.out.println("Client " + id + " woke up!");
+    void wakeup() throws RemoteException {
+        log("woke up!");
 
         int j = 0;
         int minWeight = Integer.MAX_VALUE;
@@ -181,15 +185,28 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         fragment = new Fragment(e, id, e.to, 0);
         state = State.Found;
         findCount = 0;
+        log(e.toString());
         send(new Message(Type.Connect, fragment, state, e));
+        log("Done");
     }
 
-    void send(Message m) throws Exception {
-        RemoteClient c = findClient(m.j.to);
-        c.receive(m);
+    void send(Message m) throws RemoteException {
+        RemoteClient c = findClient(m.j.other(id));
+        log("djdjddjd");
+        new java.util.Timer().schedule(
+                new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            c.receive(m);
+                        } catch (Exception e) {
+                        }
+                    }
+                },
+                100);
     }
 
-    void test() throws Exception {
+    void test() throws RemoteException {
         boolean found = false;
         int weight = Integer.MAX_VALUE;
         for (int i = 0; i < edges.size(); i++) {
@@ -200,24 +217,57 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 found = true;
             }
         }
-        if (found) send(new Message(Type.Test, fragment, state, testEdge));
-        else report();
+        if (found)
+            send(new Message(Type.Test, fragment, state, testEdge));
+        else
+            report();
     }
 
     void report() {
         // do some magic
     }
 
-    private RemoteClient findClient(int id) throws InterruptedException {
+    private RemoteClient findClient(int id) {
         final String otherId = id + "";
         RemoteClient other = null;
         while (other == null) {
             try {
                 other = (RemoteClient) reg.lookup(otherId);
             } catch (Exception e) {
-                Thread.sleep(100);
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e2) {
+                }
             }
         }
+        log(otherId + " tada");
         return other;
+    }
+
+    public void printTree() throws RemoteException {
+        log("PRINTING");
+        try {
+            for (int i = 0; i < 10; i++) {
+                if (i == id)
+                    continue;
+                log(i + "," + findClient(i).getInBranch());
+            }
+        } catch (Exception e) {
+        }
+    }
+
+    public Integer getInBranch() throws RemoteException {
+        if (inBranch == null)
+            return null;
+        else
+            try {
+                return inBranch.other(id);
+            } catch (Exception e) {
+                return null;
+            }
+    }
+
+    void log(String s) {
+        System.out.println(id + ": " + s);
     }
 }
