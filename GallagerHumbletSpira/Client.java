@@ -150,20 +150,27 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 break;
             case Test:
                 log("TEST");
-                if (state == State.Sleeping) wakeup();
-                if (m.fragment.level < fragment.level) messageQueue.add(m);
+                if (state == State.Sleeping)
+                    wakeup();
+                if (m.fragment.level < fragment.level)
+                    messageQueue.add(m);
                 else {
-                    if (!m.fragment.edge.equals(fragment.edge)) send(new Message(Type.Accept, fragment, state, m.j, null));
+                    if (!m.fragment.edge.equals(fragment.edge))
+                        send(new Message(Type.Accept, fragment, state, m.j, null));
                     else {
-                        if (edges.get(m.j) == EdgeState.Unknown) edges.put(m.j, EdgeState.Excluded);
-                        if (!testEdge.equals(m.j)) send(new Message(Type.Reject, fragment, state, m.j, null));
-                        else test();
+                        if (edges.get(m.j) == EdgeState.Unknown)
+                            edges.put(m.j, EdgeState.Excluded);
+                        if (!testEdge.equals(m.j))
+                            send(new Message(Type.Reject, fragment, state, m.j, null));
+                        else
+                            test();
                     }
                 }
                 break;
             case Reject:
                 log("REJECT");
-                if (edges.get(m.j) == EdgeState.Unknown) edges.put(m.j, EdgeState.Excluded);
+                if (edges.get(m.j) == EdgeState.Unknown)
+                    edges.put(m.j, EdgeState.Excluded);
                 test();
                 break;
             case Accept:
@@ -188,6 +195,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     if (state == State.Find) {
                         messageQueue.add(m);
                     } else {
+                        log(m.w.toString());
                         if (m.w > bestWt) {
                             changeRoot();
                         } else if (m.w == Integer.MAX_VALUE && bestWt == Integer.MAX_VALUE) {
@@ -201,6 +209,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 changeRoot();
                 break;
         }
+
+        processQueue();
+    }
+
+    void processQueue() {
+
     }
 
     void wakeup() throws RemoteException {
@@ -255,15 +269,17 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     void report() throws RemoteException {
-        if (findCount==0 && testEdge==null) {
+        if (findCount == 0 && testEdge == null) {
             state = State.Found;
             send(new Message(Type.Report, fragment, state, inBranch, bestWt));
         }
     }
 
     void changeRoot() throws RemoteException {
-        if (edges.get(bestEdge) == EdgeState.Included) send(new Message(Type.ChangeRoot, fragment, state, bestEdge, null));
-        else send(new Message(Type.Connect, fragment, state, bestEdge, null));
+        if (edges.get(bestEdge) == EdgeState.Included)
+            send(new Message(Type.ChangeRoot, fragment, state, bestEdge, null));
+        else
+            send(new Message(Type.Connect, fragment, state, bestEdge, null));
         edges.put(bestEdge, EdgeState.Included);
     }
 
