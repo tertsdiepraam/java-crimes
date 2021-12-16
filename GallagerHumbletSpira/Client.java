@@ -22,16 +22,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         Unknown, Included, Excluded
     }
 
-    public static class Edge implements Serializable {
-        final int from;
-        final int to;
-        final int weight;
-
-        public Edge(int from, int to, int weight) {
-            this.from = from;
-            this.to = to;
-            this.weight = weight;
-        }
+    public static record Edge(int from, int to, int weight) implements Serializable {
 
         @Override
         public boolean equals(Object o) {
