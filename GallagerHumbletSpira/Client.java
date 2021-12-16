@@ -7,7 +7,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -74,7 +73,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     Edge inBranch = null;
     int bestWt = Integer.MAX_VALUE;
     final HashMap<Edge, EdgeState> edges = new HashMap<>();
-    final ArrayDeque<Message> messageQueue = new ArrayDeque<Message>();
+    ArrayDeque<Message> messageQueue = new ArrayDeque<Message>();
 
     public Client(int id, Edge[] edges, Integer wakeupTime) throws RemoteException, AlreadyBoundException {
         super();
@@ -113,6 +112,20 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void receive(Message m) throws RemoteException {
+        process(m);
+
+        int queueSize = 0;
+        while (queueSize != messageQueue.size()) {
+            queueSize = messageQueue.size();
+            ArrayDeque<Message> tmp = messageQueue;
+            messageQueue = new ArrayDeque<>();
+            for (Message msg : tmp) {
+                process(msg);
+            }
+        }
+    }
+
+    public void process(Message m) throws RemoteException {
         switch (m.type) {
             case Connect:
                 log("CONNECT");
@@ -184,14 +197,16 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 break;
             case Report:
                 log("REPORT");
-                if (m.j != inBranch) {
+                if (!m.j.equals(inBranch)) {
                     findCount--;
                     if (m.w < bestWt) {
                         bestWt = m.w;
                         bestEdge = m.j;
                     }
                     report();
+                    log("a");
                 } else {
+                    log("b");
                     if (state == State.Find) {
                         messageQueue.add(m);
                     } else {
@@ -209,12 +224,6 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 changeRoot();
                 break;
         }
-
-        processQueue();
-    }
-
-    void processQueue() {
-
     }
 
     void wakeup() throws RemoteException {
@@ -271,6 +280,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     void report() throws RemoteException {
         if (findCount == 0 && testEdge == null) {
             state = State.Found;
+            log("another");
             send(new Message(Type.Report, fragment, state, inBranch, bestWt));
         }
     }

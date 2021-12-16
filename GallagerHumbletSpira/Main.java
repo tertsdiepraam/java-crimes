@@ -12,6 +12,18 @@ public class Main {
     public static void main(String[] args) throws RemoteException, AlreadyBoundException {
         
         boolean isServer = false;
+
+        Edge[][] testCases = new Edge[][] {
+            new Edge[] {
+                new Edge(0, 1, 0),
+            },
+            new Edge[] {
+                new Edge(0, 1, 0),
+                new Edge(1, 2, 1),
+                new Edge(0, 2, 2),
+            }
+        };
+
         if (args.length == 2 && args[1].equals("server")) {
             LocateRegistry.createRegistry(1888);
             isServer = true;
@@ -23,10 +35,7 @@ public class Main {
 
         System.out.println("Making processes " + start + " to " + end);
 
-        Edge[] edges = new Edge[] {
-            new Edge(0, 1, 0),
-            //new Edge(1, 2, 1),
-        };
+        Edge[] edges = testCases[1];
 
         for (int i = start; i < end; i++) {
             new Thread(new Client(i, edges, i == 0 ? 0 : null)).start();
