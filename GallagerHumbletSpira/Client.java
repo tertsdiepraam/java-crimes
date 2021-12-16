@@ -182,7 +182,15 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     }
                     report();
                 } else {
-
+                    if (state == State.Find) {
+                        messageQueue.add(m);
+                    } else {
+                        if (m.w > bestWt) {
+                            changeRoot();
+                        } else if (m.w == Integer.MAX_VALUE && bestWt == Integer.MAX_VALUE) {
+                            halt();
+                        }
+                    }
                 }
                 break;
             case ChangeRoot:
@@ -250,6 +258,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             send(new Message(Type.Report, fragment, state, inBranch, bestWt));
         }
     }
+
+    void changeRoot() {
+
+    }
+
+    void halt() {}
 
     private RemoteClient findClient(int id) {
         final String otherId = id + "";
