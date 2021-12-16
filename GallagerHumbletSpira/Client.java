@@ -20,8 +20,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public class Edge {
-        int from;
-        int to;
+        private int from;
+        private int to;
         int weight;
         EdgeState state;
 
@@ -32,14 +32,24 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             this.state = EdgeState.Unknown;
         }
 
-        Edge from(int id) {
-            if (this.from == id) {
-                return this;
-            } else if (this.to == id) {
-                return new Edge(this.to, this.from, this.weight);
-            } else {
-                return null;
+        public boolean equals(Edge other) {
+            if (this.weight != other.weight) {
+                return false;
             }
+            return (this.from == other.from && this.to == other.to) || (this.from == other.to && this.to == other.from);
+        }
+
+        public int other(int self) throws Exception {
+            if (this.from == self) {
+                return this.to;
+            } else if (this.to == self) {
+                return this.from;
+            }
+            throw new Exception("YOU IDIOT");
+        }
+
+        public boolean includes(int id) {
+            return this.from == id || this.to == id;
         }
     };
 
@@ -68,9 +78,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         reg.bind(id + "", this);
 
         for (Edge e : edges) {
-            Edge eFrom = e.from(id);
-            if (eFrom != null) {
-                this.edges.add(eFrom);
+            if (e.includes(id)) {
+                this.edges.add(e);
             }
         }
     }
@@ -112,6 +121,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     void wakeup() throws InterruptedException, RemoteException {
+        System.out.println("Client " + id + " woke up!");
+
         int j = 0;
         int minWeight = Integer.MAX_VALUE;
         for (int i = 0; i < edges.size(); i++) {
