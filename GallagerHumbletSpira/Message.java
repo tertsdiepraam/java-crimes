@@ -15,11 +15,13 @@ class Message implements Serializable {
     Fragment fragment;
     State S;
     Edge j;
+    Integer w;
 
-    public Message(Type type, Fragment fragment, State S, Edge j) {
+    public Message(Type type, Fragment fragment, State S, Edge j, Integer w) {
         this.type = type;
         this.fragment = fragment;
         this.S = S;
         this.j = j;
+        this.w = w;
     }
 }

@@ -122,14 +122,14 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     wakeup();
                 if (m.fragment.level < fragment.level) {
                     edges.put(m.j, EdgeState.Included);
-                    send(new Message(Type.Initiate, fragment, state, m.j));
+                    send(new Message(Type.Initiate, fragment, state, m.j, null));
                     if (state == State.Find)
                         findCount++;
                 } else {
                     if (edges.get(m.j) == EdgeState.Unknown)
                         messageQueue.add(m);
                     else
-                        send(new Message(Type.Initiate, incrementFragment(fragment, m.j), State.Find, m.j));
+                        send(new Message(Type.Initiate, incrementFragment(fragment, m.j), State.Find, m.j, null));
                 }
                 break;
             case Initiate:
@@ -140,7 +140,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 bestWt = Integer.MAX_VALUE;
                 for (Entry<Edge, EdgeState> entry : edges.entrySet()) {
                     if (!entry.getKey().equals(m.j) && entry.getValue() == EdgeState.Included) {
-                        send(new Message(Type.Initiate, m.fragment, m.S, entry.getKey()));
+                        send(new Message(Type.Initiate, m.fragment, m.S, entry.getKey(), null));
                         if (m.S == State.Find) {
                             findCount++;
                         }
@@ -156,6 +156,16 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             case Reject:
                 break;
             case Report:
+                if (m.j != inBranch) {
+                    findCount--;
+                    if (m.w < bestWt) {
+                        bestWt = m.w;
+                        bestEdge = m.j;
+                    }
+                    report();
+                } else {
+
+                }
                 break;
             case ChangeRoot:
                 break;
@@ -177,7 +187,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         state = State.Found;
         findCount = 0;
         log(e.toString());
-        send(new Message(Type.Connect, fragment, state, e));
+        send(new Message(Type.Connect, fragment, state, e, null));
         log("Done");
     }
 
@@ -209,9 +219,11 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             }
         }
         if (found)
-            send(new Message(Type.Test, fragment, state, testEdge));
-        else
+            send(new Message(Type.Test, fragment, state, testEdge, null));
+        else {
+            testEdge = null;
             report();
+        }
     }
 
     void report() {
