@@ -8,6 +8,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.Map.Entry;
 
 import GallagerHumbletSpira.Message.Type;
@@ -32,11 +33,23 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             this.weight = weight;
         }
 
-        public boolean equals(Edge other) {
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+
+            Edge other = (Edge) o;
             if (this.weight != other.weight) {
                 return false;
             }
             return (this.from == other.from && this.to == other.to) || (this.from == other.to && this.to == other.from);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(from, to, weight);
         }
 
         public Integer other(int self) {
@@ -126,9 +139,10 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void process(Message m) throws RemoteException {
+        logMap();
         switch (m.type) {
             case Connect:
-                log("CONNECT");
+                logMsg("CONNECT", m);
                 if (state == State.Sleeping)
                     wakeup();
                 if (m.fragment.level < fragment.level) {
@@ -144,7 +158,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
                 break;
             case Initiate:
-                log("INITIATE");
+                logMsg("INITIATE", m);
                 fragment = m.fragment;
                 state = m.S;
                 inBranch = m.j;
@@ -162,32 +176,37 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     test();
                 break;
             case Test:
-                log("TEST");
+                logMsg("TEST", m);
                 if (state == State.Sleeping)
                     wakeup();
-                if (m.fragment.level < fragment.level)
+                if (m.fragment.level < fragment.level) {
+                    log("1");
                     messageQueue.add(m);
-                else {
+                } else {
                     if (!m.fragment.edge.equals(fragment.edge))
                         send(new Message(Type.Accept, fragment, state, m.j, null));
                     else {
-                        if (edges.get(m.j) == EdgeState.Unknown)
+                        log("2");
+                        if (edges.get(m.j) == EdgeState.Unknown) {
                             edges.put(m.j, EdgeState.Excluded);
-                        if (!testEdge.equals(m.j))
+                            logMap();
+                        }
+                        if (m.j.equals(testEdge)) {
+                            log("reject me pls");
                             send(new Message(Type.Reject, fragment, state, m.j, null));
-                        else
+                        } else
                             test();
                     }
                 }
                 break;
             case Reject:
-                log("REJECT");
+                logMsg("REJECT", m);
                 if (edges.get(m.j) == EdgeState.Unknown)
                     edges.put(m.j, EdgeState.Excluded);
                 test();
                 break;
             case Accept:
-                log("ACCEPT");
+                logMsg("ACCEPT", m);
                 testEdge = null;
                 if (m.j.weight < bestWt) {
                     bestEdge = m.j;
@@ -196,7 +215,9 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 report();
                 break;
             case Report:
-                log("REPORT");
+                logMsg("REPORT", m);
+                log("j " + m.j + " branch " + inBranch);
+                log(" " + findCount + " ");
                 if (!m.j.equals(inBranch)) {
                     findCount--;
                     if (m.w < bestWt) {
@@ -206,7 +227,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     report();
                     log("a");
                 } else {
-                    log("b");
+                    log("the state is " + state);
+                    log("the findCount is " + findCount);
                     if (state == State.Find) {
                         messageQueue.add(m);
                     } else {
@@ -220,7 +242,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
                 break;
             case ChangeRoot:
-                log("CHANGE ROOT");
+                logMsg("CHANGE ROOT", m);
                 changeRoot();
                 break;
         }
@@ -279,6 +301,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
     void report() throws RemoteException {
         if (findCount == 0 && testEdge == null) {
+            log("found!");
             state = State.Found;
             log("another");
             send(new Message(Type.Report, fragment, state, inBranch, bestWt));
@@ -338,5 +361,18 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
     void log(String s) {
         System.out.println(id + ": " + s);
+    }
+
+    void logMsg(String s, Message m) {
+        System.out.println(id + " -> " + m.j.other(id) + ": " + s);
+    }
+
+    void logMap() {
+        System.out.println();
+        for (Entry<Edge, EdgeState> e : edges.entrySet()) {
+            Edge edge = e.getKey();
+            log(edge.from + " " + edge.to + " " + edge.weight + " => " + e.getValue());
+        }
+        System.out.println();
     }
 }
