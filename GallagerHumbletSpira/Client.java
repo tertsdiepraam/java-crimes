@@ -200,9 +200,9 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     void test() throws RemoteException {
         boolean found = false;
         int weight = Integer.MAX_VALUE;
-        for (int i = 0; i < edges.size(); i++) {
-            Edge cur = edges.get(i);
-            if (cur.state == EdgeState.Unknown && cur.weight < weight) {
+        for (Entry<Edge, EdgeState> entry : edges.entrySet()) {
+            Edge cur = entry.getKey();
+            if (entry.getValue() == EdgeState.Unknown && cur.weight < weight) {
                 testEdge = cur;
                 weight = cur.weight;
                 found = true;
