@@ -13,13 +13,16 @@ public class Main {
 
         Crime[] crimes = new Crime[] {
             new Crime(0, 0),
-            new Crime(1, 100),
-            new Crime(0, 1100),
-            // new Crime(2, 300),
+            new Crime(3, 2000),
+            new Crime(1, 1000),
+            new Crime(2, 1000),
+            new Crime(1, 2500),
+            new Crime(2, 3500),
             // new Crime(3, 1000),
             // new Crime(4, 1500),
-            // new Crime(3, 6000),
-            // new Crime(2, 7500),
+            // new Crime(0, 6000),
+            // new Crime(3, 7500),
+            // new Crime(2, 9000),
         };
 
         for (int i = 0; i < NUM_PROCESSES; i++) {
