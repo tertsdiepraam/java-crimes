@@ -124,23 +124,22 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void receive(Message m) throws RemoteException {
-        process(m);
+        messageQueue.addFirst(m);
 
-        int queueSize = 0;
-        while (queueSize != messageQueue.size()) {
-            queueSize = messageQueue.size();
+        boolean anySucceeded = true;
+        while (anySucceeded) {
+            anySucceeded = false;
             ArrayDeque<Message> tmp = messageQueue;
             messageQueue = new ArrayDeque<>();
             for (Message msg : tmp) {
-                process(msg);
+                anySucceeded = anySucceeded || process(msg);
             }
-            log("Messages left:" + messageQueue.size());
         }
     }
 
-    public void process(Message m) throws RemoteException {
-        logMap();
+    public boolean process(Message m) throws RemoteException {
         logMsg(m);
+        logMap();
         switch (m.type) {
             case Connect:
                 if (state == State.Sleeping) {
@@ -156,6 +155,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 } else {
                     if (edges.get(m.j) == EdgeState.Unknown) {
                         messageQueue.add(m);
+                        return false;
                     } else {
                         send(new Message(Type.Initiate, fragment.increment(), State.Find, m.j, null));
                     }
@@ -185,6 +185,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 if (m.fragment.level < fragment.level) {
                     log("1");
                     messageQueue.add(m);
+                    return false;
                 } else {
                     if (!m.fragment.edge.equals(fragment.edge))
                         send(new Message(Type.Accept, fragment, state, m.j, null));
@@ -230,6 +231,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     log("the state is " + state);
                     if (state == State.Find) {
                         messageQueue.add(m);
+                        return false;
                     } else {
                         log(m.w.toString());
                         if (m.w > bestWt) {
@@ -244,6 +246,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 changeRoot();
                 break;
         }
+        return true;
     }
 
     void wakeup() throws RemoteException {
@@ -361,6 +364,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     void logMsg(Message m) {
+        System.out.println();
         System.out.println(id + " -> " + m.j.other(id) + ": " + m.type);
     }
 
