@@ -1,6 +1,7 @@
 package GallagerHumbletSpira;
 
 import java.rmi.AlreadyBoundException;
+import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -57,7 +58,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     };
 
     final int id;
-    final Registry reg;
+    Registry reg;
     final Integer wakeupTime;
 
     Fragment fragment;
@@ -74,7 +75,11 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         super();
         this.id = id;
         this.wakeupTime = wakeupTime;
-        reg = LocateRegistry.getRegistry(1888);
+        try {
+            reg = LocateRegistry.getRegistry(1888);
+        } catch (ConnectException e) {
+            reg = LocateRegistry.getRegistry("10.0.2.2", 1888);
+        }
         reg.bind(id + "", this);
 
         for (Edge e : edges) {
