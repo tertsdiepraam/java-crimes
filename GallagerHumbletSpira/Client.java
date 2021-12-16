@@ -8,6 +8,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import GallagerHumbletSpira.Message.Type;
 
@@ -24,13 +26,11 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         private int from;
         private int to;
         int weight;
-        EdgeState state;
 
         public Edge(int from, int to, int weight) {
             this.from = from;
             this.to = to;
             this.weight = weight;
-            this.state = EdgeState.Unknown;
         }
 
         public boolean equals(Edge other) {
@@ -52,6 +52,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         public boolean includes(int id) {
             return this.from == id || this.to == id;
         }
+
     }
 
     record Fragment(Edge edge, int from, int to, int level) implements Serializable {
@@ -72,7 +73,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     Edge testEdge = null;
     Edge inBranch = null;
     int bestWt = Integer.MAX_VALUE;
-    final ArrayList<Edge> edges = new ArrayList<Edge>();
+    final HashMap<Edge, EdgeState> edges = new HashMap<>();
     final ArrayDeque<Message> messageQueue = new ArrayDeque<Message>();
 
     public Client(int id, Edge[] edges, Integer wakeupTime) throws RemoteException, AlreadyBoundException {
@@ -89,7 +90,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
         for (Edge e : edges) {
             if (e.includes(id)) {
-                this.edges.add(e);
+                this.edges.put(e, EdgeState.Unknown);
             }
         }
     }
@@ -120,19 +121,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 if (state == State.Sleeping)
                     wakeup();
                 if (m.fragment.level < fragment.level) {
-                    int cur = -1;
-                    for (int i = 0; i < edges.size(); i++) {
-                        if (edges.get(i).equals(m.j)) {
-                            cur = i;
-                        }
-                    }
-                    m.j.state = EdgeState.Included;
-                    edges.set(cur, m.j);
+                    edges.put(m.j, EdgeState.Included);
                     send(new Message(Type.Initiate, fragment, state, m.j));
                     if (state == State.Find)
                         findCount++;
                 } else {
-                    if (m.j.state == EdgeState.Unknown)
+                    if (edges.get(m.j) == EdgeState.Unknown)
                         messageQueue.add(m);
                     else
                         send(new Message(Type.Initiate, incrementFragment(fragment, m.j), State.Find, m.j));
@@ -144,9 +138,9 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 inBranch = m.j;
                 bestEdge = null;
                 bestWt = Integer.MAX_VALUE;
-                for (Edge edge : edges) {
-                    if (!edge.equals(m.j) && edge.state == EdgeState.Included) {
-                        send(new Message(Type.Initiate, m.fragment, m.S, edge));
+                for (Entry<Edge, EdgeState> entry : edges.entrySet()) {
+                    if (!entry.getKey().equals(m.j) && entry.getValue() == EdgeState.Included) {
+                        send(new Message(Type.Initiate, m.fragment, m.S, entry.getKey()));
                         if (m.S == State.Find) {
                             findCount++;
                         }
@@ -171,17 +165,14 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     void wakeup() throws RemoteException {
         log("woke up!");
 
-        int j = 0;
-        int minWeight = Integer.MAX_VALUE;
-        for (int i = 0; i < edges.size(); i++) {
-            if (edges.get(i).weight < minWeight) {
-                j = i;
-                minWeight = edges.get(i).weight;
+        Edge e = (Edge) edges.keySet().toArray()[0];
+        for (Edge edge : edges.keySet()) {
+            if (edge.weight < e.weight) {
+                e = edge;
             }
         }
 
-        Edge e = edges.get(j);
-        e.state = EdgeState.Included;
+        edges.put(e, EdgeState.Included);
         fragment = new Fragment(e, id, e.to, 0);
         state = State.Found;
         findCount = 0;
