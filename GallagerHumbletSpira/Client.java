@@ -109,15 +109,13 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         }
                     },
                     wakeupTime);
-        } else
-            log("sleepy");
+        }
     }
 
     public void receive(Message m) throws RemoteException {
-        log("Got a message");
         switch (m.type) {
             case Connect:
-                log("Got a connect message");
+                log("CONNECT");
                 if (state == State.Sleeping)
                     wakeup();
                 if (m.fragment.level < fragment.level) {
@@ -133,6 +131,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
                 break;
             case Initiate:
+                log("INITIATE");
                 fragment = m.fragment;
                 state = m.S;
                 inBranch = m.j;
@@ -150,6 +149,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     test();
                 break;
             case Test:
+                log("TEST");
                 if (state == State.Sleeping) wakeup();
                 if (m.fragment.level < fragment.level) messageQueue.add(m);
                 else {
@@ -162,10 +162,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
                 break;
             case Reject:
+                log("REJECT");
                 if (edges.get(m.j) == EdgeState.Unknown) edges.put(m.j, EdgeState.Excluded);
                 test();
                 break;
             case Accept:
+                log("ACCEPT");
                 testEdge = null;
                 if (m.j.weight < bestWt) {
                     bestEdge = m.j;
@@ -174,6 +176,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 report();
                 break;
             case Report:
+                log("REPORT");
                 if (m.j != inBranch) {
                     findCount--;
                     if (m.w < bestWt) {
@@ -194,13 +197,14 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
                 break;
             case ChangeRoot:
+                log("CHANGE ROOT");
                 changeRoot();
                 break;
         }
     }
 
     void wakeup() throws RemoteException {
-        log("woke up!");
+        log("WOKE UP!");
 
         Edge e = (Edge) edges.keySet().toArray()[0];
         for (Edge edge : edges.keySet()) {
@@ -213,14 +217,11 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         fragment = new Fragment(e, id, e.to, 0);
         state = State.Found;
         findCount = 0;
-        log(e.toString());
         send(new Message(Type.Connect, fragment, state, e, null));
-        log("Done");
     }
 
     void send(Message m) throws RemoteException {
         RemoteClient c = findClient(m.j.other(id));
-        log("djdjddjd");
         new java.util.Timer().schedule(
                 new java.util.TimerTask() {
                     @Override
@@ -284,12 +285,10 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
             }
         }
-        log(otherId + " tada");
         return other;
     }
 
     public void printTree() throws RemoteException {
-        log("PRINTING");
         try {
             for (int i = 0; i < 10; i++) {
                 if (i == id)
