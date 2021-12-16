@@ -150,7 +150,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                     send(new Message(Type.Initiate, fragment, state, m.j, null));
                     if (state == State.Find) {
                         findCount++;
-                        log("FindCount: " + findCount);
+                        log("findCount=" + findCount);
                     }
                 } else {
                     if (edges.get(m.j) == EdgeState.Unknown) {
@@ -172,7 +172,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         send(new Message(Type.Initiate, m.fragment, m.S, entry.getKey(), null));
                         if (m.S == State.Find) {
                             findCount++;
-                            log("FindCount: " + findCount);
+                            log("findCount=" + findCount);
                         }
                     }
                 }
@@ -218,9 +218,9 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 report();
                 break;
             case Report:
-                log(" " + findCount + " ");
                 if (!m.j.equals(inBranch)) {
                     findCount--;
+                    log("findCount=" + findCount);
                     if (m.w < bestWt) {
                         bestWt = m.w;
                         bestEdge = m.j;
@@ -360,20 +360,25 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     void log(String s) {
-        System.out.println(id + ": " + s);
+        System.out.println("     " + id + ": " + s);
     }
 
     void logMsg(Message m) {
-        System.out.println();
-        System.out.println(id + " -> " + m.j.other(id) + ": " + m.type);
+        System.out.println("-----------------------------------------");
+        System.out.println(m.j.other(id)  + " -> " + id + ": " + m.type);
     }
 
     void logMap() {
-        System.out.println();
+        System.out.print("     " + id + ": ");
+        System.out.print("{");
+        boolean first = true;
         for (Entry<Edge, EdgeState> e : edges.entrySet()) {
             Edge edge = e.getKey();
-            log(edge.from + " " + edge.to + " " + edge.weight + " => " + e.getValue());
+            if (!first)
+                System.out.print(", ");
+            System.out.print(edge.other(id) + " => " + e.getValue());
+            first = false;
         }
-        System.out.println();
+        System.out.println("}");
     }
 }
