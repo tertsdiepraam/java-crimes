@@ -1,0 +1,2 @@
+javac GallagerHumbletSpira/Main.java
+java GallagerHumbletSpira.Main
