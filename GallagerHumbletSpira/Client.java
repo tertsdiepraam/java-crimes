@@ -162,8 +162,16 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                 }
                 break;
             case Reject:
+                if (edges.get(m.j) == EdgeState.Unknown) edges.put(m.j, EdgeState.Excluded);
+                test();
                 break;
             case Accept:
+                testEdge = null;
+                if (m.j.weight < bestWt) {
+                    bestEdge = m.j;
+                    bestWt = m.j.weight;
+                }
+                report();
                 break;
             case Report:
                 if (m.j != inBranch) {
@@ -236,8 +244,11 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         }
     }
 
-    void report() {
-        // do some magic
+    void report() throws RemoteException {
+        if (findCount==0 && testEdge==null) {
+            state = State.Found;
+            send(new Message(Type.Report, fragment, state, inBranch, bestWt));
+        }
     }
 
     private RemoteClient findClient(int id) {
