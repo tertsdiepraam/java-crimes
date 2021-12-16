@@ -77,7 +77,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         this.wakeupTime = wakeupTime;
         try {
             reg = LocateRegistry.getRegistry(1888);
-        } catch (ConnectException e) {
+        } catch (Exception e) {
             reg = LocateRegistry.getRegistry("10.0.2.2", 1888);
         }
         reg.bind(id + "", this);
