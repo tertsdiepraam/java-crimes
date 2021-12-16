@@ -260,8 +260,10 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         }
     }
 
-    void changeRoot() {
-
+    void changeRoot() throws RemoteException {
+        if (edges.get(bestEdge) == EdgeState.Included) send(new Message(Type.ChangeRoot, fragment, state, bestEdge, null));
+        else send(new Message(Type.Connect, fragment, state, bestEdge, null));
+        edges.put(bestEdge, EdgeState.Included);
     }
 
     void halt() throws RemoteException {
