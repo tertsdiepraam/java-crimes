@@ -78,6 +78,7 @@ public class Main {
         Edge[] edges = testCases[5];
 
         for (int i = start; i < end; i++) {
+            System.out.println("Hello " + i);
             new Thread(new Client(i, edges, i == 0 ? 0 : null)).start();
         }
     }
