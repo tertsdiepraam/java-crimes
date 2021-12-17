@@ -75,10 +75,9 @@ public class Main {
 
         System.out.println("Making processes " + start + " to " + end);
 
-        Edge[] edges = testCases[5];
+        Edge[] edges = testCases[2];
 
         for (int i = start; i < end; i++) {
-            System.out.println("Hello " + i);
             new Thread(new Client(i, edges, i == 0 ? 0 : null)).start();
         }
     }
