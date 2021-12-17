@@ -137,6 +137,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     public boolean process(Message m) throws RemoteException {
         logMsg(m);
         logMap();
+        log("testEdge=" + testEdge);
         switch (m.type()) {
             case Connect:
                 if (state == State.Sleeping) {
@@ -193,7 +194,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                             edges.put(m.j(), EdgeState.Excluded);
                             logMap();
                         }
-                        if (m.j().equals(testEdge)) {
+                        if (!m.j().equals(testEdge)) {
                             log("reject me pls");
                             send(new Message(Type.Reject, fragment, state, m.j(), null));
                         } else {
@@ -294,8 +295,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
         if (found) {
             send(new Message(Type.Test, fragment, state, testEdge, null));
         } else {
-            testEdge = null;
             log("testEdge <- " + testEdge);
+            testEdge = null;
             report();
         }
     }
