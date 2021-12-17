@@ -179,12 +179,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             case Test:
                 if (state == State.Sleeping)
                     wakeup();
-                if (m.fragment().level < fragment.level) {
+                if (m.fragment().level > fragment.level) {
                     messageQueue.add(m);
                     return false;
                 } else {
-                    log("m.fragment.edge=" + m.fragment().edge());
-                    log("fragment.edge=" + fragment.edge);
+                    log("m.fragment=" + m.fragment());
+                    log("fragment=" + fragment);
                     if (!m.fragment().edge.equals(fragment.edge))
                         send(new Message(Type.Accept, fragment, state, m.j(), null));
                     else {
