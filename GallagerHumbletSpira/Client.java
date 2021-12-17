@@ -98,6 +98,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void run() {
+        log("Started!!!!!");
         if (wakeupTime != null) {
             new java.util.Timer().schedule(
                     new java.util.TimerTask() {
