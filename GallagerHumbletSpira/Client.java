@@ -295,11 +295,13 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
             send(new Message(Type.Test, fragment, state, testEdge, null));
         } else {
             testEdge = null;
+            log("testEdge <- " + testEdge);
             report();
         }
     }
 
     void report() throws RemoteException {
+        log("testEdge=" + testEdge);
         if (findCount == 0 && testEdge == null) {
             log("found!");
             state = State.Found;
