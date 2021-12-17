@@ -116,22 +116,27 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
     }
 
     public void receive(Message m) throws RemoteException {
-        if (!process(m)) {
-            log("Message Delayed!");
-            return;
-        }
-
-        boolean anySucceeded = true;
-        while (anySucceeded) {
-            anySucceeded = false;
-            ArrayDeque<Message> tmp = messageQueue;
-            messageQueue = new ArrayDeque<>();
-            for (Message msg : tmp) {
-                boolean result = process(msg);
-                if (!result)
-                    log("Message Delayed!");
-                anySucceeded = anySucceeded || result; 
+        try {
+            if (!process(m)) {
+                log("Message Delayed!");
+                return;
             }
+
+            boolean anySucceeded = true;
+            while (anySucceeded) {
+                anySucceeded = false;
+                ArrayDeque<Message> tmp = messageQueue;
+                messageQueue = new ArrayDeque<>();
+                for (Message msg : tmp) {
+                    boolean result = process(msg);
+                    if (!result)
+                        log("Message Delayed!");
+                    anySucceeded = anySucceeded || result;
+                }
+            }
+        } catch (Exception e) {
+            log(e.toString());
+            throw e;
         }
     }
 
@@ -156,7 +161,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         messageQueue.add(m);
                         return false;
                     } else {
-                        send(new Message(Type.Initiate, new Fragment(m.j(), fragment.level+1), State.Find, m.j(), null));
+                        send(new Message(Type.Initiate, new Fragment(m.j(), fragment.level + 1), State.Find, m.j(),
+                                null));
                     }
                 }
                 break;
@@ -276,6 +282,8 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
                         try {
                             c.receive(m);
                         } catch (Exception e) {
+                            log("Send failed :(");
+                            log(e.toString());
                         }
                     }
                 },
@@ -326,10 +334,12 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
     private RemoteClient findClient(int id) {
         final String otherId = id + "";
+        log("Trying to send to " + id);
         RemoteClient other = null;
         while (other == null) {
             try {
                 other = (RemoteClient) reg.lookup(otherId);
+                log("Found " + id);
             } catch (Exception e) {
                 try {
                     Thread.sleep(100);
@@ -368,7 +378,7 @@ public class Client extends UnicastRemoteObject implements RemoteClient, Runnabl
 
     void logMsg(Message m) {
         System.out.println("-----------------------------------------");
-        System.out.println(m.j().other(id)  + " -> " + id + ": " + m.type());
+        System.out.println(m.j().other(id) + " -> " + id + ": " + m.type());
     }
 
     void logMap() {
